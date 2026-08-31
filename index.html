@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Closer to the Sun</title>
+
+  <style>
+    @font-face {
+      font-family: 'MainFont';
+      src: url('./assets/MainFont.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: block;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: none;
+      font-smooth: never;
+      text-rendering: optimizeSpeed;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'MainFont', monospace;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #game-viewport {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      background-color: #000;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+      font-family: 'MainFont', monospace;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #canvasArea {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+      z-index: 1;
+    }
+
+    #canvasArea canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    #ui-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .ui-element {
+      pointer-events: auto;
+    }
+
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 18px;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    #distance-counter {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #443322;
+      color: #fff;
+      display: inline-block;
+    }
+
+    #feathers-container {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      min-height: 28px;
+    }
+
+    .feather-icon {
+      width: 24px;
+      height: 24px;
+      background-image: url('./assets/ui/feather10.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    #current-wings-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      color: #ffd700;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      width: fit-content;
+    }
+
+    #current-wings-icon {
+      width: 20px;
+      height: 16px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    #prompt-text {
+      position: absolute;
+      bottom: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      color: #fff;
+      text-shadow: 1px 1px 0px #000;
+      background: rgba(20, 15, 10, 0.9);
+      border: 2px solid #8b7355;
+      padding: 6px 14px;
+      border-radius: 4px;
+      display: none;
+      white-space: nowrap;
+    }
+
+    #dialogue-box {
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      width: 640px;
+      height: 480px;
+      background-image: url('./assets/ui/dialogue.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      display: none;
+      z-index: 20;
+      pointer-events: auto;
+    }
+
+    #dialogue-portrait {
+      position: absolute;
+      left: 532px;
+      top: 365px;
+      width: 80px;
+      height: 80px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      z-index: 21;
+    }
+
+    #dialogue-text {
+      position: absolute;
+      left: 20px;
+      top: 370px;
+      width: 480px;
+      height: 75px;
+      font-size: 20px;
+      color: #000;
+      line-height: 1.2;
+      z-index: 21;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    #dialogue-hint {
+      position: absolute;
+      left: 395px;
+      top: 440px;
+      width: 120px;
+      height: 18px;
+      font-size: 13px;
+      color: #555;
+      animation: pulse 1s infinite alternate;
+      z-index: 22;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.4; }
+      to { opacity: 1.0; }
+    }
+
+    #modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #modal-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #workshop-panel {
+      width: 640px;
+      height: 480px;
+      position: relative;
+      display: none;
+      overflow: hidden;
+    }
+
+    .workshop-slide-group, .shop-slide-group {
+      position: absolute;
+      top: 0; left: 0; width: 640px; height: 480px;
+      pointer-events: none;
+      will-change: transform, opacity;
+    }
+
+    .workshop-slide-group *, .shop-slide-group * { pointer-events: auto; }
+
+    #workshop-panel.open #workshop-slide-top {
+      animation: slideFromTop 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    #workshop-panel.open #workshop-slide-left {
+      animation: slideFromLeft 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideFromTop {
+      0% { transform: translateY(-480px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideFromLeft {
+      0% { transform: translateX(-640px); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+
+    #gears {
+      position: absolute;
+      left: 460px; top: 150px; width: 144px; height: 147px;
+      z-index: 0;
+      background-image: url('./assets/ui/gears.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      pointer-events: none;
+    }
+
+    .spin-anim { animation: spinGears 0.8s ease-out; }
+
+    @keyframes spinGears {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #workshop-bg3, #workshop-bg2, #workshop-bg1 {
+      position: absolute;
+      left: 0px; top: 0px; width: 640px; height: 480px;
+      z-index: 1;
+      background-size: 100% 100%;
+      pointer-events: none;
+    }
+    #workshop-bg3 { background-image: url('./assets/ui/workshop3.png'); }
+    #workshop-bg2 { background-image: url('./assets/ui/workshop2.png'); }
+    #workshop-bg1 { background-image: url('./assets/ui/workshop1.png'); z-index: 10; }
+
+    #recipe-name {
+      position: absolute;
+      left: 320px; top: 68px; width: 175px; height: 24px;
+      z-index: 15;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: #2b1d0c;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #recipe-stats {
+      position: absolute;
+      left: 286px; top: 232px; width: 240px; height: 20px;
+      z-index: 15;
+      text-align: center;
+      font-size: 15px;
+      font-weight: bold;
+      color: #2b1d0c;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #recipe-requirements, #shop-recipe-requirements {
+      position: absolute;
+      left: 5px; top: 85px; width: 210px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .req-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      min-height: 20px;
+      white-space: nowrap;
+      color: #2b1d0c;
+    }
+
+    .req-icon {
+      width: 20px; height: 20px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      image-rendering: pixelated;
+      flex-shrink: 0;
+    }
+
+    #wings-preview {
+      position: absolute;
+      left: 390px; top: 290px; width: 32px; height: 32px;
+      z-index: 4;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    #arrow-prev {
+      position: absolute;
+      left: 263px; top: 289px; width: 48px; height: 32px;
+      z-index: 5;
+      background-image: url('./assets/ui/arrow_left1.png');
+      background-size: 100% 100%;
+      background-color: transparent !important;
+      border: none !important;
+      outline: none;
+      cursor: pointer;
+    }
+    #arrow-prev:active { background-image: url('./assets/ui/arrow_left2.png'); }
+
+    #arrow-next {
+      position: absolute;
+      left: 504px; top: 289px; width: 48px; height: 32px;
+      z-index: 5;
+      background-image: url('./assets/ui/arrow_right1.png');
+      background-size: 100% 100%;
+      background-color: transparent !important;
+      border: none !important;
+      outline: none;
+      cursor: pointer;
+    }
+    #arrow-next:active { background-image: url('./assets/ui/arrow_right2.png'); }
+
+    .btn-workshop {
+      position: absolute;
+      width: 101px; height: 33px;
+      z-index: 15;
+      background-image: url('./assets/ui/button1.png');
+      background-size: 100% 100%;
+      background-color: transparent !important;
+      border: none !important;
+      outline: none;
+      cursor: pointer;
+      font-family: 'MainFont', monospace;
+      font-size: 18px;
+      font-weight: bold;
+      color: #2b1d0c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .btn-workshop:active { background-image: url('./assets/ui/button2.png'); }
+    .btn-workshop:disabled { filter: grayscale(1) opacity(0.5); cursor: not-allowed; }
+
+    #btn-craft { left: 297px; top: 360px; }
+    #btn-close-workshop { left: 416px; top: 360px; }
+
+    #wings-preview-full {
+      position: absolute;
+      left: 326px; top: 93px; width: 160px; height: 128px;
+      z-index: 15;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      pointer-events: none;
+    }
+
+    #workshop-inventory-container {
+      position: absolute;
+      left: 0px; top: 0px; width: 640px; height: 480px;
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    .inv-item-slot {
+      position: absolute;
+      width: 24px; height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .inv-item-icon {
+      width: 24px; height: 24px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      image-rendering: pixelated;
+    }
+
+    .inv-item-icon.dimmed {
+      filter: brightness(0.25) grayscale(1);
+      opacity: 0.4;
+    }
+
+    .inv-item-count {
+      position: absolute;
+      right: -2px; bottom: -2px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffffff !important;
+      text-shadow: 1px 1px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    #shop-panel {
+      width: 640px;
+      height: 480px;
+      position: relative;
+      display: none;
+      overflow: hidden;
+    }
+
+    #shop-panel.open #shop-slide-left {
+      animation: slideFromLeft 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    #shop-panel.open #shop-slide-bottom {
+      animation: slideFromBottom 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    #shop-panel.open #shop-slide-right {
+      animation: slideFromRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideFromBottom {
+      0% { transform: translateY(480px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideFromRight {
+      0% { transform: translateX(640px); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+
+    #shop-bg, #shop-inv-bg, #shop-recipe-bg {
+      position: absolute;
+      left: 0px; top: 0px; width: 640px; height: 480px;
+      z-index: 1;
+      background-size: 100% 100%;
+      pointer-events: none;
+    }
+    #shop-bg { background-image: url('./assets/ui/shop1.png'); }
+    #shop-inv-bg { background-image: url('./assets/ui/shop3.png'); }
+    #shop-recipe-bg { background-image: url('./assets/ui/workshop2.png'); }
+
+    #shop-hint {
+      position: absolute;
+      left: 110px; top: 432px; width: 320px; height: 20px;
+      z-index: 15;
+      font-size: 14px;
+      color: #ffffff;
+      text-shadow: 1px 1px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+      text-align: left;
+    }
+
+    #shop-coins-icon {
+      position: absolute;
+      left: 318px; top: 226px; width: 20px; height: 20px;
+      z-index: 15;
+      background-image: url('./assets/items/coin.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    #shop-coins-text {
+      position: absolute;
+      left: 342px; top: 228px; width: 60px; height: 20px;
+      z-index: 15;
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffd700;
+      text-shadow: 1px 1px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+    }
+
+    #shop-items-container {
+      position: absolute;
+      left: 0px; top: 0px; width: 640px; height: 480px;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    .shop-card {
+      position: absolute;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+      pointer-events: auto;
+    }
+
+    .shop-card:hover {
+      transform: scale(1.2);
+    }
+
+    .shop-card-icon {
+      width: 32px;
+      height: 32px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+
+    #shop-inventory-container {
+      position: absolute;
+      left: 0px; top: 0px; width: 640px; height: 480px;
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    .shop-inv-slot {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: transparent !important;
+      border: none !important;
+      transition: transform 0.1s ease;
+      pointer-events: auto;
+    }
+
+    .shop-inv-slot:hover {
+      transform: scale(1.2);
+    }
+
+    #black-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: #000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 100;
+    }
+
+    #cutscene-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 40px;
+      z-index: 25;
+      background-size: cover;
+      background-position: center;
+    }
+
+    #cutscene-text {
+      width: 85%;
+      max-width: 580px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #8b7355;
+      padding: 16px;
+      font-size: 20px;
+      text-align: center;
+      color: #fff;
+      line-height: 1.4;
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="game-viewport">
+    <div id="canvasArea"></div>
+
+    <div id="ui-container">
+      <div id="hud">
+        <div id="distance-counter">Distance: 0 | Current Tier: 1</div>
+        <div id="feathers-container"></div>
+        <div id="current-wings-info">
+          <div id="current-wings-icon"></div>
+          <span id="current-wings-text">Equipped: None</span>
+        </div>
+      </div>
+
+      <div id="prompt-text">Press E to Interact</div>
+
+      <div id="dialogue-box" class="ui-element">
+        <div id="dialogue-portrait"></div>
+        <div id="dialogue-text">...</div>
+        <div id="dialogue-hint">Press E to continue</div>
+      </div>
+
+      <div id="modal-overlay">
+        <div id="workshop-panel" class="ui-element">
+          <div id="workshop-slide-top" class="workshop-slide-group" style="z-index: 1;">
+            <div id="gears"></div>
+            <div id="workshop-bg3"></div>
+            <div id="recipe-name">Steel Wings</div>
+            <div id="recipe-stats">Speed: 1200 | Durability: 4</div>
+            <div id="wings-preview"></div>
+            <button id="arrow-prev"></button>
+            <button id="arrow-next"></button>
+            <button class="btn-workshop" id="btn-craft">Craft</button>
+            <button class="btn-workshop" id="btn-close-workshop">Exit</button>
+            <div id="wings-preview-full"></div>
+          </div>
+
+          <div id="workshop-slide-left" class="workshop-slide-group" style="z-index: 10;">
+            <div id="workshop-bg2"></div>
+            <div id="workshop-bg1"></div>
+            <div id="recipe-requirements"></div>
+            <div id="workshop-inventory-container"></div>
+          </div>
+        </div>
+
+        <div id="shop-panel" class="ui-element">
+          <div id="shop-slide-left" class="shop-slide-group" style="z-index: 1;">
+            <div id="shop-recipe-bg"></div>
+            <div id="shop-recipe-requirements"></div>
+          </div>
+
+          <div id="shop-slide-bottom" class="shop-slide-group" style="z-index: 10;">
+            <div id="shop-bg"></div>
+            <div id="shop-hint">Click to buy/sell. Press E to exit</div>
+            <div id="shop-coins-icon"></div>
+            <span id="shop-coins-text">0</span>
+            <div id="shop-items-container"></div>
+            <button class="btn-workshop" id="btn-close-shop" style="left: 446px; top: 426px; z-index: 20;">Exit</button>
+          </div>
+
+          <div id="shop-slide-right" class="shop-slide-group" style="z-index: 10;">
+            <div id="shop-inv-bg"></div>
+            <div id="shop-inventory-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cutscene-overlay">
+        <div id="cutscene-text">...</div>
+      </div>
+
+      <div id="black-screen"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
