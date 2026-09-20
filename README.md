@@ -160,7 +160,7 @@ Aleksandr focused primarily on the game's **programming and 3D side**, while als
 
 ## 📸 Screenshots
 
-![1](CTSGIF1.gif)
+![1](CTSGIF3.gif)
 ![1](CTSGIF2.gif)
 
 ---
