@@ -5,7 +5,7 @@
 <a href="https://youtu.be/3LuoDnCql2k">▶ WATCH GAMEPLAY</a>
 <a href="https://dahaton.itch.io/closer-to-the-sun">🌐 PLAY IN BROWSER</a>
 
-<img src="PATH_TO_GAMEPLAY_GIF" alt="Closer to the Sun gameplay">
+![1](CTSGIF.gif)
 
 ---
 
@@ -160,15 +160,8 @@ Aleksandr focused primarily on the game's **programming and 3D side**, while als
 
 ## 📸 Screenshots
 
-<p align="center">
-  <img src="SCREENSHOT_1" width="48%">
-  <img src="SCREENSHOT_2" width="48%">
-</p>
-
-<p align="center">
-  <img src="SCREENSHOT_3" width="48%">
-  <img src="SCREENSHOT_4" width="48%">
-</p>
+![1](CTSGIF1.gif)
+![1](CTSGIF2.gif)
 
 ---
 
